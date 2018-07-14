@@ -24,7 +24,7 @@ int (*builtin_func[])(char **) = {
   &lsh_exit
 };
 
-int lsh_num_buitins() {
+int lsh_num_builtins() {
   return sizeof(builtin_str) / sizeof(char *);
 }
 
@@ -58,6 +58,30 @@ int lsh_exit(char **args) {
   return 0;
 }
 
+  
+
+int lsh_launch(char **args) {
+  pid_t pid, wpid;
+  int status;
+  
+  pid = fork();
+  if (pid == 0){
+    if (execvp(args[0], args) == -1){
+      perror("lsh");
+    }
+    exit(EXIT_FAILURE);
+  } else if (pid < 0) {
+    perror("lsh");
+  } else {
+    do {
+      wpid = waitpid (pid, &status, WUNTRACED);
+    } while (!WIFEXITED(status) && !WIFSIGNALED(status));
+  }
+
+  return 1;
+}
+
+
 int lsh_execute(char **args) {
   int i;
   
@@ -72,31 +96,6 @@ int lsh_execute(char **args) {
   }
   return lsh_launch(args);
 }
-
-
-  
-
-int lsh_launch(char **args) {
-  pid_t pid, wpid;
-  int status;
-  
-  pid = fork();
-  if (pid == 0){
-    if (execvp(args[0], args) == -1){
-      perror("lsh");
-	}
-    exit(EXIT_FAILURE);
-  } else if (pid < 0) {
-    perror("lsh");
-  } else {
-    do {
-      wpid = waitpid (pid, &status, WUNTRACED);
-    } while (!WIFEXITED(status) && !WIFSIGNALED(status));
-  }
-
-  return 1;
-}
-
 
 char **lsh_split_line(char *line) {
   int bufsize = LSH_TOK_BUFSIZE, position = 0;
